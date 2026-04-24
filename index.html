@@ -182,7 +182,7 @@ table.gen tr:hover td{background:#f8fafc;}
     <h1>🏢 人力資源管理系統</h1>
     <div class="sub">管理者後台 — 人事資料 · 考勤 · 請假</div>
   </div>
-  <a href="員工系統.html" class="emp-link">👤 前往員工頁面 →</a>
+  <a href="https://ttcr-taichung.github.io/HRMS/" target="_blank" class="emp-link">👤 前往員工頁面 →</a>
 </div>
 
 <!-- ═══════════ TAB NAV ═══════════ -->
@@ -1305,8 +1305,8 @@ function submitHR(){
 }
 function copyEmpLink(id,name){
   // 取得目錄路徑（支援中文資料夾名稱）
-  const base=location.href.substring(0,location.href.lastIndexOf('/')+1);
-  const url=base+'%E5%93%A1%E5%B7%A5%E7%B3%BB%E7%B5%B1.html?id='+id;
+  const base='https://ttcr-taichung.github.io/HRMS/';
+  const url=base+'?id='+id;
   // Show link modal
   let modal=document.getElementById('empLinkModal');
   if(!modal){
