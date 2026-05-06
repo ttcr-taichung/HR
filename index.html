@@ -392,6 +392,7 @@ const LEAVE_TYPES={
 };
 
 let currentEmp=null,leaves=[],quotas={},currentMode='full';
+let _fbUrl='',_fbKey='';
 let _calcEndDate='',_calcDays=0; // store computed values for submit
 
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
@@ -752,6 +753,14 @@ function submitLeave(){
   const newLeave={id:uid(),empName:currentEmp.name,type,startDate,endDate,isHalfDay,halfSession,hours,days,reason,note:'',startTime,endTime,source:'employee',createdAt:Date.now()};
   leaves.push(newLeave);
   localStorage.setItem('att_leaves',JSON.stringify(leaves));
+  if(_fbUrl&&_fbKey){
+    fetch(`${_fbUrl}/att-${_fbKey}/records.json`)
+      .then(r=>r.json())
+      .then(data=>{
+        const updated={hrRecords:data?.hrRecords||[],leaves:[...(data?.leaves||[]),newLeave],quotas:data?.quotas||{}};
+        return fetch(`${_fbUrl}/att-${_fbKey}/records.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(updated)});
+      }).catch(e=>console.warn('Firebase write failed',e));
+  }
 
   // Reset form
   document.getElementById('ap-type').value=Object.keys(LEAVE_TYPES)[0];
@@ -836,15 +845,28 @@ function cancelLeave(id){
 }
 
 // ── Boot ────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded',()=>{
+window.addEventListener('DOMContentLoaded',async()=>{
   const params=new URLSearchParams(location.search);
   const empId=params.get('id');
+  const fbB64=params.get('fb');
+  const fbKeyParam=params.get('fk');
   const encodedData=params.get('d');
   let hrRecords=[];
-  if(encodedData){
+
+  if(fbB64&&fbKeyParam){
+    // ── Firebase 模式（自動同步）──
+    try{
+      let b64=fbB64.replace(/-/g,'+').replace(/_/g,'/');
+      while(b64.length%4)b64+='=';
+      _fbUrl=atob(b64);
+      _fbKey=fbKeyParam;
+      const r=await fetch(`${_fbUrl}/att-${_fbKey}/records.json`);
+      const data=await r.json();
+      if(data){hrRecords=data.hrRecords||[];leaves=data.leaves||[];quotas=data.quotas||{};}
+    }catch(e){console.warn('Firebase load failed',e);}
+  } else if(encodedData){
     // ── 從連結取得資料（跨裝置模式）──
     try{
-      // 還原 URL 安全 base64：- → + ，_ → / ，補回 = padding
       let b64=encodedData.replace(/-/g,'+').replace(/_/g,'/');
       while(b64.length%4)b64+='=';
       const payload=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b64),c=>c.charCodeAt(0))));
@@ -870,10 +892,18 @@ window.addEventListener('DOMContentLoaded',()=>{
   apCalcFull();
   renderInfo();renderHistory();
 });
-window.addEventListener('focus',()=>{
+window.addEventListener('focus',async()=>{
   if(!currentEmp)return;
-  try{leaves=JSON.parse(localStorage.getItem('att_leaves')||'[]');}catch(e){}
-  try{quotas=JSON.parse(localStorage.getItem('att_quotas')||'{}');}catch(e){}
+  if(_fbUrl&&_fbKey){
+    try{
+      const r=await fetch(`${_fbUrl}/att-${_fbKey}/records.json`);
+      const data=await r.json();
+      if(data){leaves=data.leaves||[];quotas=data.quotas||{};}
+    }catch(e){}
+  }else{
+    try{leaves=JSON.parse(localStorage.getItem('att_leaves')||'[]');}catch(e){}
+    try{quotas=JSON.parse(localStorage.getItem('att_quotas')||'{}');}catch(e){}
+  }
   renderInfo();renderHistory();renderMonthView();onTypeChange();
 });
 </script>
