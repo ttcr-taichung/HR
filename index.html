@@ -825,7 +825,7 @@ window.addEventListener('DOMContentLoaded',()=>{
       // 還原 URL 安全 base64：- → + ，_ → / ，補回 = padding
       let b64=encodedData.replace(/-/g,'+').replace(/_/g,'/');
       while(b64.length%4)b64+='=';
-      const payload=JSON.parse(decodeURIComponent(escape(atob(b64))));
+      const payload=JSON.parse(decodeURIComponent(atob(b64)));
       hrRecords=payload.hrRecords||[];
       leaves=payload.leaves||[];
       quotas=payload.quotas||{};
