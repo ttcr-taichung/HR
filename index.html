@@ -819,9 +819,9 @@ function submitLeave(){
   const attStatus=document.getElementById('ap-attachment-status');if(attStatus)attStatus.textContent='';
   setMode('full',document.querySelectorAll('.mode-btn')[0]);
   onTypeChange();
-  showToast('✅ 請假申請已送出！');
+  showToast('✅ 請假申請已送出！管理員將自動收到通知。');
   renderHistory();renderInfo();
-  setTimeout(()=>{showTab('history',document.querySelectorAll('.tab-btn')[2]);showNotifyManager(newLeave);},600);
+  setTimeout(()=>{showTab('history',document.querySelectorAll('.tab-btn')[2]);if(!_fbUrl||!_fbKey)showNotifyManager(newLeave);},600);
 }
 function showNotifyManager(lv){
   const payload={leaves:[lv]};
