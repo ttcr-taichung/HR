@@ -401,28 +401,38 @@ const LEAVE_TYPES={
 };
 
 let currentEmp=null,leaves=[],quotas={},currentMode='full';
-let _fbUrl='',_fbKey='',_fbBucket='';
+let _fbUrl='',_fbKey='',_imgbbKey='';
 let _calcEndDate='',_calcDays=0; // store computed values for submit
 
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
 function today(){return new Date().toISOString().split('T')[0];}
 function showToast(msg,ok=true){const t=document.getElementById('toast');t.textContent=msg;t.style.background=ok?'#15803d':'#dc2626';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
-async function fbStorageUpload(file,folder){
-  if(!_fbBucket)throw new Error('Storage bucket 未設定');
-  const ext=file.name.split('.').pop()||'bin';
-  const name=`${folder}/${Date.now()}_${Math.random().toString(36).slice(2,6)}.${ext}`;
-  const apiUrl=`https://firebasestorage.googleapis.com/v0/b/${_fbBucket}/o?uploadType=media&name=${encodeURIComponent(name)}`;
-  const r=await fetch(apiUrl,{method:'POST',headers:{'Content-Type':file.type||'application/octet-stream'},body:file});
-  if(!r.ok)throw new Error('Upload failed: '+r.status);
-  const d=await r.json();
-  return`https://firebasestorage.googleapis.com/v0/b/${_fbBucket}/o/${encodeURIComponent(name)}?alt=media&token=${d.downloadTokens}`;
+async function imgbbUpload(file){
+  if(!_imgbbKey)throw new Error('ImgBB API Key 未設定');
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=async()=>{
+      try{
+        const base64=reader.result.split(',')[1];
+        const fd=new FormData();
+        fd.append('key',_imgbbKey);
+        fd.append('image',base64);
+        const r=await fetch('https://api.imgbb.com/1/upload',{method:'POST',body:fd});
+        const d=await r.json();
+        if(d.success)resolve(d.data.url);
+        else reject(new Error(d.error?.message||'上傳失敗'));
+      }catch(e){reject(e);}
+    };
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
 }
 async function handleImgUpload(inputEl,previewEl,hiddenId,folder,statusId){
   const file=inputEl.files[0];if(!file)return;
   const statusEl=statusId?document.getElementById(statusId):null;
   if(statusEl)statusEl.textContent='⏳ 上傳中...';
   try{
-    const url=await fbStorageUpload(file,folder);
+    const url=await imgbbUpload(file);
     if(hiddenId)document.getElementById(hiddenId).value=url;
     if(previewEl){previewEl.querySelector('img').src=url;previewEl.style.display='block';}
     if(statusEl)statusEl.textContent='✅ 上傳完成';
@@ -890,7 +900,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
   const empId=params.get('id');
   const fbB64=params.get('fb');
   const fbKeyParam=params.get('fk');
-  const fbsParam=params.get('fbs');
+  const ibkParam=params.get('ibk');
   const encodedData=params.get('d');
   let hrRecords=[];
 
@@ -901,7 +911,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
       while(b64.length%4)b64+='=';
       _fbUrl=atob(b64);
       _fbKey=fbKeyParam;
-      if(fbsParam)_fbBucket=fbsParam;
+      if(ibkParam)_imgbbKey=ibkParam;
       const r=await fetch(`${_fbUrl}/att-${_fbKey}/records.json`);
       const data=await r.json();
       if(data){hrRecords=data.hrRecords||[];leaves=data.leaves||[];quotas=data.quotas||{};}
