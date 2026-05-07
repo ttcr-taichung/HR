@@ -868,8 +868,8 @@ function renderHistory(){
     let durStr=l.hours!=null?l.hours+'小時':(l.isHalfDay?`半天（${l.halfSession==='AM'?'上午':'下午'}）`:l.days+'天');
     const canCancel=l.startDate>todayStr;
     const cancelBtn=canCancel?`<button onclick="cancelLeave('${l.id}')" style="padding:3px 8px;background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;border-radius:5px;font-size:.72rem;cursor:pointer;font-weight:600">取消</button>`:'<span style="color:#94a3b8;font-size:.72rem">—</span>';
-    const attM=(l.attachment||'').match(/\/d\/([a-zA-Z0-9_-]+)/)||(l.attachment||'').match(/[?&]id=([a-zA-Z0-9_-]+)/);
-    const attCell=attM?`<a href="${l.attachment}" target="_blank"><img src="https://drive.google.com/thumbnail?id=${attM[1]}&sz=w80" style="height:32px;border-radius:4px;border:1px solid #e0f2fe"></a>`:'—';
+    const attSrc=l.attachment||'';
+    const attCell=attSrc?`<a href="${attSrc}" target="_blank"><img src="${attSrc}" style="height:32px;border-radius:4px;border:1px solid #e0f2fe"></a>`:'—';
     return`<tr>
       <td>${ltype(l.type)}</td>
       <td style="font-size:.8rem">${dateStr}</td>
