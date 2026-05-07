@@ -182,7 +182,9 @@ table.gen tr:hover td{background:#f0f9ff;}
         </div>
         <div class="form-group">
           <label>附件（選填，例如病假請附醫療證明）</label>
-          <input type="text" id="ap-attachment" placeholder="貼上 Google Drive 分享連結" oninput="const m=(this.value.match(/\/d\/([a-zA-Z0-9_-]+)/)||this.value.match(/[?&]id=([a-zA-Z0-9_-]+)/));const p=document.getElementById('ap-attachment-preview');if(m){p.querySelector('img').src='https://drive.google.com/thumbnail?id='+m[1]+'&sz=w300';p.style.display='block';}else p.style.display='none'">
+          <input type="hidden" id="ap-attachment">
+          <input type="file" accept="image/*,application/pdf" onchange="handleImgUpload(this,document.getElementById('ap-attachment-preview'),'ap-attachment','leaves','ap-attachment-status')">
+          <div id="ap-attachment-status" style="font-size:.75rem;color:#64748b;margin-top:4px"></div>
           <div id="ap-attachment-preview" style="margin-top:6px;display:none">
             <img src="" style="max-width:100%;max-height:140px;border-radius:8px;border:1px solid #e0f2fe">
           </div>
@@ -399,12 +401,36 @@ const LEAVE_TYPES={
 };
 
 let currentEmp=null,leaves=[],quotas={},currentMode='full';
-let _fbUrl='',_fbKey='';
+let _fbUrl='',_fbKey='',_fbBucket='';
 let _calcEndDate='',_calcDays=0; // store computed values for submit
 
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
 function today(){return new Date().toISOString().split('T')[0];}
 function showToast(msg,ok=true){const t=document.getElementById('toast');t.textContent=msg;t.style.background=ok?'#15803d':'#dc2626';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+async function fbStorageUpload(file,folder){
+  if(!_fbBucket)throw new Error('Storage bucket 未設定');
+  const ext=file.name.split('.').pop()||'bin';
+  const name=`${folder}/${Date.now()}_${Math.random().toString(36).slice(2,6)}.${ext}`;
+  const apiUrl=`https://firebasestorage.googleapis.com/v0/b/${_fbBucket}/o?uploadType=media&name=${encodeURIComponent(name)}`;
+  const r=await fetch(apiUrl,{method:'POST',headers:{'Content-Type':file.type||'application/octet-stream'},body:file});
+  if(!r.ok)throw new Error('Upload failed: '+r.status);
+  const d=await r.json();
+  return`https://firebasestorage.googleapis.com/v0/b/${_fbBucket}/o/${encodeURIComponent(name)}?alt=media&token=${d.downloadTokens}`;
+}
+async function handleImgUpload(inputEl,previewEl,hiddenId,folder,statusId){
+  const file=inputEl.files[0];if(!file)return;
+  const statusEl=statusId?document.getElementById(statusId):null;
+  if(statusEl)statusEl.textContent='⏳ 上傳中...';
+  try{
+    const url=await fbStorageUpload(file,folder);
+    if(hiddenId)document.getElementById(hiddenId).value=url;
+    if(previewEl){previewEl.querySelector('img').src=url;previewEl.style.display='block';}
+    if(statusEl)statusEl.textContent='✅ 上傳完成';
+  }catch(e){
+    if(statusEl)statusEl.textContent='❌ 上傳失敗：'+e.message;
+    showToast('上傳失敗：'+e.message,false);
+  }
+}
 function ltype(k){const t=LEAVE_TYPES[k]||{name:k,color:'#64748b',bg:'#f1f5f9'};return`<span class="ltype" style="background:${t.bg};color:${t.color}">${t.name}</span>`;}
 function fmtDays(d){const n=+d;if(isNaN(n))return'—';if(n>=1)return n+'天';if(Math.abs(n-0.5)<0.001)return'半天（4小時）';return(n*8)+'小時';}
 function calcAge(bd){if(!bd)return'—';const b=new Date(bd),n=new Date();let a=n.getFullYear()-b.getFullYear();if(n.getMonth()<b.getMonth()||(n.getMonth()===b.getMonth()&&n.getDate()<b.getDate()))a--;return a+'歲';}
@@ -780,6 +806,7 @@ function submitLeave(){
   const etEl=document.getElementById('ap-endTime');if(etEl)etEl.value='';
   const attEl=document.getElementById('ap-attachment');if(attEl)attEl.value='';
   const attPrev=document.getElementById('ap-attachment-preview');if(attPrev)attPrev.style.display='none';
+  const attStatus=document.getElementById('ap-attachment-status');if(attStatus)attStatus.textContent='';
   setMode('full',document.querySelectorAll('.mode-btn')[0]);
   onTypeChange();
   showToast('✅ 請假申請已送出！');
@@ -863,6 +890,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
   const empId=params.get('id');
   const fbB64=params.get('fb');
   const fbKeyParam=params.get('fk');
+  const fbsParam=params.get('fbs');
   const encodedData=params.get('d');
   let hrRecords=[];
 
@@ -873,6 +901,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
       while(b64.length%4)b64+='=';
       _fbUrl=atob(b64);
       _fbKey=fbKeyParam;
+      if(fbsParam)_fbBucket=fbsParam;
       const r=await fetch(`${_fbUrl}/att-${_fbKey}/records.json`);
       const data=await r.json();
       if(data){hrRecords=data.hrRecords||[];leaves=data.leaves||[];quotas=data.quotas||{};}
