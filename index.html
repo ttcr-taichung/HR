@@ -734,7 +734,7 @@ function apCalcSingle(){
   noticeEl.style.display='none';
   _calcEndDate=d;
   if(currentMode==='halfAM'){sumEl.value=`${d} 上午半天（4小時）`;_calcDays=0.5;}
-  else if(currentMode==='halfPM'){sumEl.value=`${d} 下午半天（4小時）`;_calcDays=0.5;}
+  else if(currentMode==='halfPM'){sumEl.value=`${d} 下午半天（5小時）`;_calcDays=0.5;}
   else if(currentMode==='hours'){
     const h=parseFloat(document.getElementById('ap-hours').value||0);
     sumEl.value=`${d} ${h}小時`;_calcDays=+(h/8).toFixed(4);
