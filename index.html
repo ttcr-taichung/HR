@@ -116,7 +116,6 @@ table.gen tr:hover td{background:#f0f9ff;}
             <button type="button" class="mode-btn active" onclick="setMode('full',this)">📅 整天</button>
             <button type="button" class="mode-btn" onclick="setMode('halfAM',this)">🌅 上午半天</button>
             <button type="button" class="mode-btn" onclick="setMode('halfPM',this)">🌇 下午半天</button>
-            <button type="button" class="mode-btn" onclick="setMode('hours',this)">⏱️ 按小時</button>
           </div>
         </div>
 
@@ -148,29 +147,6 @@ table.gen tr:hover td{background:#f0f9ff;}
           <div id="ap-single-notice" class="alert-holiday"></div>
         </div>
 
-        <!-- 小時數 -->
-        <div id="mode-hours-sel" style="display:none">
-          <div class="form-group">
-            <label>請假時數 *（最少 0.5 小時）</label>
-            <select id="ap-hours" onchange="apCalcSingle()">
-              <option value="0.5">0.5 小時</option>
-              <option value="1">1 小時</option>
-              <option value="1.5">1.5 小時</option>
-              <option value="2">2 小時</option>
-              <option value="2.5">2.5 小時</option>
-              <option value="3">3 小時</option>
-              <option value="3.5">3.5 小時</option>
-              <option value="4">4 小時（半天）</option>
-              <option value="4.5">4.5 小時</option>
-              <option value="5">5 小時</option>
-              <option value="5.5">5.5 小時</option>
-              <option value="6">6 小時</option>
-              <option value="6.5">6.5 小時</option>
-              <option value="7">7 小時</option>
-              <option value="7.5">7.5 小時</option>
-            </select>
-          </div>
-        </div>
 
         <div class="form-group">
           <label>請假摘要</label>
