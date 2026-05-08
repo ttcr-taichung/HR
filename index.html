@@ -116,6 +116,7 @@ table.gen tr:hover td{background:#f0f9ff;}
             <button type="button" class="mode-btn active" onclick="setMode('full',this)">📅 整天</button>
             <button type="button" class="mode-btn" onclick="setMode('halfAM',this)">🌅 上午半天</button>
             <button type="button" class="mode-btn" onclick="setMode('halfPM',this)">🌇 下午半天</button>
+            <button type="button" class="mode-btn" onclick="setMode('hours',this)">⏱️ 按小時</button>
           </div>
         </div>
 
@@ -147,6 +148,30 @@ table.gen tr:hover td{background:#f0f9ff;}
           <div id="ap-single-notice" class="alert-holiday"></div>
         </div>
 
+
+        <!-- 小時數 -->
+        <div id="mode-hours-sel" style="display:none">
+          <div class="form-group">
+            <label>請假時數 *</label>
+            <select id="ap-hours" onchange="apCalcSingle()">
+              <option value="0.5">0.5 小時</option>
+              <option value="1">1 小時</option>
+              <option value="1.5">1.5 小時</option>
+              <option value="2">2 小時</option>
+              <option value="2.5">2.5 小時</option>
+              <option value="3">3 小時</option>
+              <option value="3.5">3.5 小時</option>
+              <option value="4">4 小時</option>
+              <option value="4.5">4.5 小時</option>
+              <option value="5">5 小時</option>
+              <option value="5.5">5.5 小時</option>
+              <option value="6">6 小時</option>
+              <option value="6.5">6.5 小時</option>
+              <option value="7">7 小時</option>
+              <option value="7.5">7.5 小時</option>
+            </select>
+          </div>
+        </div>
 
         <div class="form-group">
           <label>請假摘要</label>
@@ -655,7 +680,7 @@ function setMode(mode,btn){
   if(btn)btn.classList.add('active');
   document.getElementById('mode-full').style.display=mode==='full'?'block':'none';
   document.getElementById('mode-single').style.display=mode!=='full'?'block':'none';
-  const mhEl=document.getElementById('mode-hours-sel');if(mhEl)mhEl.style.display='none';
+  document.getElementById('mode-hours-sel').style.display=mode==='hours'?'block':'none';
   document.getElementById('ap-summary').value='—';
   document.getElementById('ap-error').style.display='none';
   if(mode==='full')apCalcFull(); else apCalcSingle();
@@ -743,6 +768,15 @@ function submitLeave(){
     days=0.5;  // ← 正確：只扣半天
     isHalfDay=true;
     halfSession=currentMode==='halfAM'?'AM':'PM';
+  }else if(currentMode==='hours'){
+    const d=document.getElementById('ap-date').value;
+    const h=parseFloat(document.getElementById('ap-hours').value||0);
+    if(!d){showErr('請選擇日期');return;}
+    if(isNonWorkDay(d)){showErr('此日為非工作日（週末或國定假日），無法請假');return;}
+    if(!h||h<0.5){showErr('請選擇請假時數');return;}
+    startDate=endDate=d;
+    hours=h;
+    days=+(h/8).toFixed(4);
   }
 
   if(!reason){showErr('請填寫請假原因');return;}
