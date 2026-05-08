@@ -910,7 +910,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
       let b64=fbB64.replace(/-/g,'+').replace(/_/g,'/');
       while(b64.length%4)b64+='=';
       _fbUrl=atob(b64);
-      _fbKey=fbKeyParam;
+      _fbKey=fbKeyParam||'main';
       if(ibkParam)_imgbbKey=ibkParam;
       const r=await fetch(`${_fbUrl}/att-${_fbKey}/records.json`);
       const data=await r.json();
