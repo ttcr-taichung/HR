@@ -103,7 +103,7 @@ table.gen tr:hover td{background:#f0f9ff;}
     <div id="tab-apply" class="tab-content">
       <div class="card">
         <div class="card-title">📝 申請請假</div>
-        <div class="alert-info">📌 最少 0.5 小時起跳。多天請假自動扣除<b>工作天</b>，國定假日＆週末不計入假別天數。</div>
+        <div class="alert-info">📌 請填寫起訖日期時間，系統自動計算請假時數與天數。</div>
         <div class="form-group">
           <label>假別 *</label>
           <select id="ap-type" onchange="onTypeChange()"></select>
@@ -111,72 +111,21 @@ table.gen tr:hover td{background:#f0f9ff;}
         <div id="ap-quota-info" class="alert-box alert-quota"></div>
 
         <div class="form-group">
-          <label>請假方式 *</label>
-          <div class="mode-tabs">
-            <button type="button" class="mode-btn active" onclick="setMode('full',this)">📅 整天</button>
-            <button type="button" class="mode-btn" onclick="setMode('halfAM',this)">🌅 上午半天</button>
-            <button type="button" class="mode-btn" onclick="setMode('halfPM',this)">🌇 下午半天</button>
-            <button type="button" class="mode-btn" onclick="setMode('hours',this)">⏱️ 按小時</button>
+          <label>請假日期時間起 *</label>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="date" id="ap-start" onchange="apCalcDatetime()" style="flex:1;min-width:130px">
+            <input type="time" id="ap-start-time" value="08:00" onchange="apCalcDatetime()" style="width:110px">
           </div>
         </div>
-
-        <!-- 整天：開始日 + 工作天數 → 自動算結束日 -->
-        <div id="mode-full">
-          <div class="field-row">
-            <div class="form-group">
-              <label>開始日期 *</label>
-              <input type="date" id="ap-start" onchange="apCalcFull()">
-            </div>
-            <div class="form-group">
-              <label>請假工作天數 *</label>
-              <input type="number" id="ap-wdays" min="1" step="1" value="1" onchange="apCalcFull()">
-            </div>
-          </div>
-          <div class="form-group">
-            <label>預計結束日期（自動跳過假日 ＆ 週末）</label>
-            <input type="text" id="ap-end-display" readonly style="background:#f0f9ff;color:#0369a1;font-weight:700;font-size:.9rem;">
-          </div>
-          <div id="ap-holiday-notice" class="alert-holiday"></div>
-        </div>
-
-        <!-- 半天 / 小時：單日 -->
-        <div id="mode-single" style="display:none">
-          <div class="form-group">
-            <label>日期 *</label>
-            <input type="date" id="ap-date" onchange="apCalcSingle()">
-          </div>
-          <div id="ap-single-notice" class="alert-holiday"></div>
-        </div>
-
-
-        <!-- 小時數 -->
-        <div id="mode-hours-sel" style="display:none">
-          <div class="form-group">
-            <label>請假時數 *</label>
-            <select id="ap-hours" onchange="apCalcSingle()">
-              <option value="0.5">0.5 小時</option>
-              <option value="1">1 小時</option>
-              <option value="1.5">1.5 小時</option>
-              <option value="2">2 小時</option>
-              <option value="2.5">2.5 小時</option>
-              <option value="3">3 小時</option>
-              <option value="3.5">3.5 小時</option>
-              <option value="4">4 小時</option>
-              <option value="4.5">4.5 小時</option>
-              <option value="5">5 小時</option>
-              <option value="5.5">5.5 小時</option>
-              <option value="6">6 小時</option>
-              <option value="6.5">6.5 小時</option>
-              <option value="7">7 小時</option>
-              <option value="7.5">7.5 小時</option>
-            </select>
-          </div>
-        </div>
-
         <div class="form-group">
-          <label>請假摘要</label>
-          <input type="text" id="ap-summary" readonly style="background:#f0f9ff;color:#0369a1;font-weight:700;">
+          <label>請假日期時間訖 *</label>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="date" id="ap-end-dt" onchange="apCalcDatetime()" style="flex:1;min-width:130px">
+            <input type="time" id="ap-end-time" value="17:00" onchange="apCalcDatetime()" style="width:110px">
+          </div>
         </div>
+
+        <input type="hidden" id="ap-summary">
         <div class="form-group">
           <label>請假原因 *</label>
           <textarea id="ap-reason" placeholder="請說明請假原因"></textarea>
@@ -188,16 +137,6 @@ table.gen tr:hover td{background:#f0f9ff;}
           <div id="ap-attachment-status" style="font-size:.75rem;color:#64748b;margin-top:4px"></div>
           <div id="ap-attachment-preview" style="margin-top:6px;display:none">
             <img src="" style="max-width:100%;max-height:140px;border-radius:8px;border:1px solid #e0f2fe">
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-          <div class="form-group" style="margin:0">
-            <label style="font-size:.78rem;color:#64748b">開始時間（選填）</label>
-            <input type="time" id="ap-startTime" style="width:100%;padding:7px;border:1px solid #cbd5e1;border-radius:7px;font-size:.85rem">
-          </div>
-          <div class="form-group" style="margin:0">
-            <label style="font-size:.78rem;color:#64748b">結束時間（選填）</label>
-            <input type="time" id="ap-endTime" style="width:100%;padding:7px;border:1px solid #cbd5e1;border-radius:7px;font-size:.85rem">
           </div>
         </div>
         <div id="ap-error" class="alert-box alert-err"></div>
@@ -401,7 +340,7 @@ const LEAVE_TYPES={
   comp:          {name:'補休',    color:'#0891b2',bg:'#cffafe'},
 };
 
-let currentEmp=null,leaves=[],quotas={},currentMode='full';
+let currentEmp=null,leaves=[],quotas={};
 let _fbUrl='',_fbKey='',_imgbbKey='067fa2f41ca5b80f7fcd84f24ffad7bb';
 let _calcEndDate='',_calcDays=0; // store computed values for submit
 
@@ -459,9 +398,9 @@ function showTab(t,btn){
   if(t==='apply'){
     const apStart=document.getElementById('ap-start');
     if(apStart&&!apStart.value)apStart.value=today();
-    const apDate=document.getElementById('ap-date');
-    if(apDate&&!apDate.value)apDate.value=today();
-    onTypeChange();apCalcFull();
+    const apEndDt=document.getElementById('ap-end-dt');
+    if(apEndDt&&!apEndDt.value)apEndDt.value=today();
+    onTypeChange();apCalcDatetime();
   }
   if(t==='info')renderInfo();
 }
@@ -674,17 +613,7 @@ function renderInfo(){
 }
 
 // ── Leave form ───────────────────────────────────────────
-function setMode(mode,btn){
-  currentMode=mode;_calcEndDate='';_calcDays=0;
-  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
-  if(btn)btn.classList.add('active');
-  document.getElementById('mode-full').style.display=mode==='full'?'block':'none';
-  document.getElementById('mode-single').style.display=mode!=='full'?'block':'none';
-  document.getElementById('mode-hours-sel').style.display=mode==='hours'?'block':'none';
-  document.getElementById('ap-summary').value='—';
-  document.getElementById('ap-error').style.display='none';
-  if(mode==='full')apCalcFull(); else apCalcSingle();
-}
+function setMode(mode,btn){}
 
 function onTypeChange(){
   const type=document.getElementById('ap-type').value;
@@ -701,46 +630,26 @@ function onTypeChange(){
     :`📋 ${lt.name}：剩餘 <b>${fmtDays(remaining)}</b>（共 ${quota} 天，已用 ${fmtDays(used)}）`;
 }
 
-function apCalcFull(){
+function apCalcDatetime(){
   _calcEndDate='';_calcDays=0;
-  const s=document.getElementById('ap-start').value;
-  const w=parseInt(document.getElementById('ap-wdays').value)||0;
-  const noticeEl=document.getElementById('ap-holiday-notice');
+  const sd=document.getElementById('ap-start').value;
+  const st=document.getElementById('ap-start-time').value||'08:00';
+  const edEl=document.getElementById('ap-end-dt');
+  const ed=edEl.value||sd;
+  const et=document.getElementById('ap-end-time').value||'17:00';
   const sumEl=document.getElementById('ap-summary');
-  if(!s||w<1){sumEl.value='—';noticeEl.style.display='none';return;}
-  const actualStart=nextWorkDay(s);
-  const{end,skipped}=calcEndByWorkDays(actualStart,w);
-  _calcEndDate=end;_calcDays=w;
-  sumEl.value=actualStart===end?`${actualStart}（${w}天）`:`${actualStart} ～ ${end}（${w} 工作天，日曆跨 ${Math.round((new Date(end+'T12:00:00')-new Date(actualStart+'T12:00:00'))/(864e5))+1} 天）`;
-  if(actualStart!==s)sumEl.value='⚠️ 開始日為非工作日，自動調整至 '+sumEl.value;
-  if(skipped.length){
-    noticeEl.style.display='block';
-    noticeEl.innerHTML='📅 期間跳過假日：'+skipped.map(x=>`<b>${x.date}</b>（${x.name}）`).join('、');
-  }else{noticeEl.style.display='none';}
+  if(!sd){sumEl.value='—';return;}
+  if(!edEl.value)edEl.value=sd;
+  const start=new Date(`${sd}T${st}:00`);
+  const end=new Date(`${ed}T${et}:00`);
+  if(end<=start){sumEl.value='⚠️ 結束時間不能早於開始時間';return;}
+  const totalHours=+(((end-start)/3600000).toFixed(2));
+  const days=+(totalHours/8).toFixed(4);
+  _calcEndDate=ed;_calcDays=days;
+  sumEl.value=`${sd} ${st} ～ ${ed} ${et}（共 ${totalHours} 小時）`;
 }
-
-function apCalcSingle(){
-  _calcEndDate='';_calcDays=0;
-  const d=document.getElementById('ap-date').value;
-  const noticeEl=document.getElementById('ap-single-notice');
-  const sumEl=document.getElementById('ap-summary');
-  if(!d){sumEl.value='—';noticeEl.style.display='none';return;}
-  if(isNonWorkDay(d)){
-    sumEl.value='⚠️ 此日為非工作日';
-    const hols=getAllHolidays();
-    noticeEl.style.display='block';
-    noticeEl.innerHTML=isWeekend(d)?'此日為週末，無法申請請假':`此日為國定假日：${hols[d]||''}，無法申請請假`;
-    return;
-  }
-  noticeEl.style.display='none';
-  _calcEndDate=d;
-  if(currentMode==='halfAM'){sumEl.value=`${d} 上午半天（4小時）`;_calcDays=0.5;}
-  else if(currentMode==='halfPM'){sumEl.value=`${d} 下午半天（5小時）`;_calcDays=0.5;}
-  else if(currentMode==='hours'){
-    const h=parseFloat(document.getElementById('ap-hours').value||0);
-    sumEl.value=`${d} ${h}小時`;_calcDays=+(h/8).toFixed(4);
-  }
-}
+function apCalcFull(){apCalcDatetime();}
+function apCalcSingle(){apCalcDatetime();}
 
 function submitLeave(){
   const type=document.getElementById('ap-type').value;
@@ -749,35 +658,16 @@ function submitLeave(){
   const showErr=(msg)=>{errEl.textContent='🚫 '+msg;errEl.style.display='block';};
   errEl.style.display='none';
 
-  let startDate,endDate,days,isHalfDay=false,halfSession='',hours=null;
-
-  if(currentMode==='full'){
-    const s=document.getElementById('ap-start').value;
-    const w=parseInt(document.getElementById('ap-wdays').value)||0;
-    if(!s){showErr('請選擇開始日期');return;}
-    if(w<1){showErr('請假天數至少1天');return;}
-    if(!_calcEndDate){apCalcFull();}
-    startDate=nextWorkDay(s);
-    endDate=_calcEndDate;
-    days=w;
-  }else if(currentMode==='halfAM'||currentMode==='halfPM'){
-    const d=document.getElementById('ap-date').value;
-    if(!d){showErr('請選擇日期');return;}
-    if(isNonWorkDay(d)){showErr('此日為非工作日（週末或國定假日），無法請假');return;}
-    startDate=endDate=d;
-    days=0.5;  // ← 正確：只扣半天
-    isHalfDay=true;
-    halfSession=currentMode==='halfAM'?'AM':'PM';
-  }else if(currentMode==='hours'){
-    const d=document.getElementById('ap-date').value;
-    const h=parseFloat(document.getElementById('ap-hours').value||0);
-    if(!d){showErr('請選擇日期');return;}
-    if(isNonWorkDay(d)){showErr('此日為非工作日（週末或國定假日），無法請假');return;}
-    if(!h||h<0.5){showErr('請選擇請假時數');return;}
-    startDate=endDate=d;
-    hours=h;
-    days=+(h/8).toFixed(4);
-  }
+  const sd=document.getElementById('ap-start').value;
+  const st=document.getElementById('ap-start-time').value||'08:00';
+  const ed=document.getElementById('ap-end-dt').value||sd;
+  const et=document.getElementById('ap-end-time').value||'17:00';
+  if(!sd){showErr('請選擇開始日期時間');return;}
+  const startDt=new Date(`${sd}T${st}:00`);
+  const endDt=new Date(`${ed}T${et}:00`);
+  if(endDt<=startDt){showErr('結束時間不能早於開始時間');return;}
+  const totalHours=+(((endDt-startDt)/3600000).toFixed(2));
+  let startDate=sd,endDate=ed,days=+(totalHours/8).toFixed(4),hours=totalHours,isHalfDay=false,halfSession='';
 
   if(!reason){showErr('請填寫請假原因');return;}
 
@@ -792,8 +682,8 @@ function submitLeave(){
     }
   }
 
-  const startTime=(document.getElementById('ap-startTime')||{}).value||'';
-  const endTime=(document.getElementById('ap-endTime')||{}).value||'';
+  const startTime=st;
+  const endTime=et;
   const attachment=(document.getElementById('ap-attachment')||{}).value?.trim()||'';
   const newLeave={id:uid(),empName:currentEmp.name,type,startDate,endDate,isHalfDay,halfSession,hours,days,reason,note:'',attachment,startTime,endTime,source:'employee',createdAt:Date.now()};
   leaves.push(newLeave);
@@ -810,15 +700,14 @@ function submitLeave(){
   // Reset form
   document.getElementById('ap-type').value=Object.keys(LEAVE_TYPES)[0];
   document.getElementById('ap-start').value=today();
-  document.getElementById('ap-wdays').value=1;
-  document.getElementById('ap-date').value=today();
+  document.getElementById('ap-start-time').value='08:00';
+  document.getElementById('ap-end-dt').value=today();
+  document.getElementById('ap-end-time').value='17:00';
   document.getElementById('ap-reason').value='';
-  const stEl=document.getElementById('ap-startTime');if(stEl)stEl.value='';
-  const etEl=document.getElementById('ap-endTime');if(etEl)etEl.value='';
   const attEl=document.getElementById('ap-attachment');if(attEl)attEl.value='';
   const attPrev=document.getElementById('ap-attachment-preview');if(attPrev)attPrev.style.display='none';
   const attStatus=document.getElementById('ap-attachment-status');if(attStatus)attStatus.textContent='';
-  setMode('full',document.querySelectorAll('.mode-btn')[0]);
+  apCalcDatetime();
   onTypeChange();
   showToast('✅ 請假申請已送出！管理員將自動收到通知。');
   renderHistory();renderInfo();
@@ -941,8 +830,10 @@ window.addEventListener('DOMContentLoaded',async()=>{
   populateLeaveTypeSelects();
   initCalSelectors();
   document.getElementById('ap-start').value=today();
-  document.getElementById('ap-date').value=today();
-  apCalcFull();
+  document.getElementById('ap-start-time').value='08:00';
+  document.getElementById('ap-end-dt').value=today();
+  document.getElementById('ap-end-time').value='17:00';
+  apCalcDatetime();
   renderInfo();renderHistory();
 });
 window.addEventListener('focus',async()=>{
