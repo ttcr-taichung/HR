@@ -112,17 +112,11 @@ table.gen tr:hover td{background:#f0f9ff;}
 
         <div class="form-group">
           <label>請假日期時間起 *</label>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <input type="date" id="ap-start" onchange="apCalcDatetime()" style="flex:1;min-width:130px">
-            <input type="time" id="ap-start-time" value="08:00" onchange="apCalcDatetime()" style="width:110px">
-          </div>
+          <input type="datetime-local" id="ap-start-dt" onchange="apCalcDatetime()" style="width:100%;padding:9px 12px;border:2px solid #bae6fd;border-radius:8px;font-size:.88rem;font-family:inherit;outline:none;background:white;color:#0c4a6e;">
         </div>
         <div class="form-group">
           <label>請假日期時間訖 *</label>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <input type="date" id="ap-end-dt" onchange="apCalcDatetime()" style="flex:1;min-width:130px">
-            <input type="time" id="ap-end-time" value="17:00" onchange="apCalcDatetime()" style="width:110px">
-          </div>
+          <input type="datetime-local" id="ap-end-dt" onchange="apCalcDatetime()" style="width:100%;padding:9px 12px;border:2px solid #bae6fd;border-radius:8px;font-size:.88rem;font-family:inherit;outline:none;background:white;color:#0c4a6e;">
         </div>
 
         <input type="hidden" id="ap-summary">
@@ -396,10 +390,10 @@ function showTab(t,btn){
   if(btn)btn.classList.add('active');
   if(t==='history'){renderMonthView();renderMonthStats();renderHistory();}
   if(t==='apply'){
-    const apStart=document.getElementById('ap-start');
-    if(apStart&&!apStart.value)apStart.value=today();
+    const apStartDt=document.getElementById('ap-start-dt');
+    if(apStartDt&&!apStartDt.value)apStartDt.value=today()+'T08:00';
     const apEndDt=document.getElementById('ap-end-dt');
-    if(apEndDt&&!apEndDt.value)apEndDt.value=today();
+    if(apEndDt&&!apEndDt.value)apEndDt.value=today()+'T17:00';
     onTypeChange();apCalcDatetime();
   }
   if(t==='info')renderInfo();
@@ -632,21 +626,16 @@ function onTypeChange(){
 
 function apCalcDatetime(){
   _calcEndDate='';_calcDays=0;
-  const sd=document.getElementById('ap-start').value;
-  const st=document.getElementById('ap-start-time').value||'08:00';
-  const edEl=document.getElementById('ap-end-dt');
-  const ed=edEl.value||sd;
-  const et=document.getElementById('ap-end-time').value||'17:00';
+  const sv=document.getElementById('ap-start-dt').value;
+  const ev=document.getElementById('ap-end-dt').value;
   const sumEl=document.getElementById('ap-summary');
-  if(!sd){sumEl.value='—';return;}
-  if(!edEl.value)edEl.value=sd;
-  const start=new Date(`${sd}T${st}:00`);
-  const end=new Date(`${ed}T${et}:00`);
-  if(end<=start){sumEl.value='⚠️ 結束時間不能早於開始時間';return;}
+  if(!sv){sumEl.value='—';return;}
+  const start=new Date(sv);
+  const end=ev?new Date(ev):null;
+  if(!end||end<=start){sumEl.value=end&&end<=start?'⚠️ 結束時間不能早於開始時間':'—';return;}
   const totalHours=+(((end-start)/3600000).toFixed(2));
-  const days=+(totalHours/8).toFixed(4);
-  _calcEndDate=ed;_calcDays=days;
-  sumEl.value=`${sd} ${st} ～ ${ed} ${et}（共 ${totalHours} 小時）`;
+  _calcEndDate=ev.split('T')[0];_calcDays=+(totalHours/8).toFixed(4);
+  sumEl.value=`${sv.replace('T',' ')} ～ ${ev.replace('T',' ')}（共 ${totalHours} 小時）`;
 }
 function apCalcFull(){apCalcDatetime();}
 function apCalcSingle(){apCalcDatetime();}
@@ -658,15 +647,16 @@ function submitLeave(){
   const showErr=(msg)=>{errEl.textContent='🚫 '+msg;errEl.style.display='block';};
   errEl.style.display='none';
 
-  const sd=document.getElementById('ap-start').value;
-  const st=document.getElementById('ap-start-time').value||'08:00';
-  const ed=document.getElementById('ap-end-dt').value||sd;
-  const et=document.getElementById('ap-end-time').value||'17:00';
-  if(!sd){showErr('請選擇開始日期時間');return;}
-  const startDt=new Date(`${sd}T${st}:00`);
-  const endDt=new Date(`${ed}T${et}:00`);
+  const sv=document.getElementById('ap-start-dt').value;
+  const ev=document.getElementById('ap-end-dt').value;
+  if(!sv){showErr('請選擇開始日期時間');return;}
+  if(!ev){showErr('請選擇結束日期時間');return;}
+  const startDt=new Date(sv);
+  const endDt=new Date(ev);
   if(endDt<=startDt){showErr('結束時間不能早於開始時間');return;}
   const totalHours=+(((endDt-startDt)/3600000).toFixed(2));
+  const sd=sv.split('T')[0],st=sv.split('T')[1]||'08:00';
+  const ed=ev.split('T')[0],et=ev.split('T')[1]||'17:00';
   let startDate=sd,endDate=ed,days=+(totalHours/8).toFixed(4),hours=totalHours,isHalfDay=false,halfSession='';
 
   if(!reason){showErr('請填寫請假原因');return;}
@@ -699,10 +689,8 @@ function submitLeave(){
 
   // Reset form
   document.getElementById('ap-type').value=Object.keys(LEAVE_TYPES)[0];
-  document.getElementById('ap-start').value=today();
-  document.getElementById('ap-start-time').value='08:00';
-  document.getElementById('ap-end-dt').value=today();
-  document.getElementById('ap-end-time').value='17:00';
+  document.getElementById('ap-start-dt').value=today()+'T08:00';
+  document.getElementById('ap-end-dt').value=today()+'T17:00';
   document.getElementById('ap-reason').value='';
   const attEl=document.getElementById('ap-attachment');if(attEl)attEl.value='';
   const attPrev=document.getElementById('ap-attachment-preview');if(attPrev)attPrev.style.display='none';
@@ -829,10 +817,8 @@ window.addEventListener('DOMContentLoaded',async()=>{
   document.getElementById('appWrap').style.display='block';
   populateLeaveTypeSelects();
   initCalSelectors();
-  document.getElementById('ap-start').value=today();
-  document.getElementById('ap-start-time').value='08:00';
-  document.getElementById('ap-end-dt').value=today();
-  document.getElementById('ap-end-time').value='17:00';
+  document.getElementById('ap-start-dt').value=today()+'T08:00';
+  document.getElementById('ap-end-dt').value=today()+'T17:00';
   apCalcDatetime();
   renderInfo();renderHistory();
 });
